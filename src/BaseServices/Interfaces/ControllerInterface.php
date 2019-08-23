@@ -1,5 +1,5 @@
 <?php
-namespace Home\Service;
+namespace BaseServices\Interfaces;
 
 /**
  *

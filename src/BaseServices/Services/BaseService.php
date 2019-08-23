@@ -1,5 +1,7 @@
 <?php
-namespace Home\Service;
+namespace BaseServices\Services;
+
+use BaseServices\Interfaces\ServicesInterface;
 
 /**
  *
@@ -11,6 +13,8 @@ class BaseService implements ServicesInterface
 
     private $method, $params = array();
 
+    /**
+     */
     public function __construct($moduleController, string $action, array $args = array())
     {
         $method = new \ReflectionMethod($moduleController, $action);
@@ -45,9 +49,9 @@ class BaseService implements ServicesInterface
     /**
      * (non-PHPdoc)
      *
-     * @see \Home\Service\ServicesInterface::run()
+     * @see \BaseServices\Interfaces\ServicesInterface::run()
      */
-    public function run(): void
+    public function run():void
     {
         try {
             $result = $this->method->invokeArgs($this->method->getDeclaringClass()
@@ -63,9 +67,9 @@ class BaseService implements ServicesInterface
     /**
      * (non-PHPdoc)
      *
-     * @see \Home\Service\ServicesInterface::bootstrap()
+     * @see \BaseServices\Interfaces\ServicesInterface::bootstrap()
      */
-    public static function bootstrap(): ServicesInterface
+    public static  function bootstrap():ServicesInterface
     {
         $uri = $_SERVER['REQUEST_URI'];
         if (preg_match('/^[A-Za-z0-9\/]+$/', $uri)) {
@@ -98,7 +102,6 @@ class BaseService implements ServicesInterface
             }
         }
         self::showError("无法定位");
-        // var_dump($_SERVER['REQUEST_METHOD']);
     }
 
     private static function showError($param)

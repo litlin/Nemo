@@ -1,30 +1,25 @@
 <?php
-namespace Home\Service;
+namespace BaseServices\Services;
 
 use Exception;
+use BaseServices\Interfaces\ControllerInterface;
 
 /**
  *
  * @author lin
  *        
  */
-class AbstractController implements ControllerInterface
+abstract class AbstractController implements ControllerInterface
 {
 
     protected $layout = "default";
 
     /**
-     */
-    public function __construct()
-    {}
-
-    /**
-     * (non-PHPdoc)
+     * 每个Controller自行实现index方法
      *
      * @see ControllerInterface::index()
      */
-    public function index()
-    {}
+    abstract public function index();
 
     /**
      * (non-PHPdoc)
@@ -38,13 +33,11 @@ class AbstractController implements ControllerInterface
             echo '<style type="text/css">*{ padding: 0; margin: 0; } div{ padding: 4px 48px;} body{ background: #fff; font-family: "微软雅黑"; color: #333;font-size:24px} h1{ font-size: 100px; font-weight: normal; margin-bottom: 12px; } p{ line-height: 1.8em; font-size: 36px } a,a:hover{color:blue;}</style><div style="padding: 24px 48px;"> <h1>有错误发生</h1></div><script type="text/javascript" src="js/bootstrap.min.js"></script>';
             die();
         } else {
-            $this->layout = "src/views/layout/" . $this->layout . ".layout.html";
+            $result = $this->getView("src/views/layout/" . $this->layout . ".layout.html");
+            $result = str_replace("{__CONTENT__}", $data, $result);
+            // header ( 'Content-Type:' . $contentType . '; charset=' . $charset );
+            echo $result;
         }
-        $result = $this->getView($this->layout);
-
-        $result = str_replace("{__CONTENT__}", $data, $result);
-        // header ( 'Content-Type:' . $contentType . '; charset=' . $charset );
-        echo $result;
     }
 
     protected function setLayout(string $layout)
@@ -53,7 +46,15 @@ class AbstractController implements ControllerInterface
             $this->layout = $layout;
     }
 
-    private function getView($view)
+    /**
+     * 通过ob操作读取指定网页内容并以字符串格式返回
+     *
+     * @param string $view
+     *            文件路径
+     * @throws Exception
+     * @return string
+     */
+    private function getView(string $view): string
     {
         $level = ob_get_level();
 

@@ -2,7 +2,8 @@
 	"name" : "nemo/nemo",
 	"autoload" : {
 		"psr-4" : {
-			"Home\\" : "src/Home/"
+			"Home\\" : "src/Home/",
+			"BaseServices\\" : "src/BaseServices"
 		}
 	},
 	"require-dev" : {

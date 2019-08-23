@@ -1,5 +1,5 @@
 <?php
-namespace Home\Service;
+namespace BaseServices\Interfaces;
 
 /**
  *
@@ -17,7 +17,7 @@ interface ServicesInterface
     public static function bootstrap(): ServicesInterface;
 
     /**
-     * 开始运行
+     * 执行
      */
     public function run(): void;
 }

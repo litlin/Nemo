@@ -1,7 +1,7 @@
 <?php
 namespace Home\Controller;
 
-use Home\Service\AbstractController;
+use BaseServices\Services\AbstractController;
 
 /**
  *
@@ -11,16 +11,9 @@ use Home\Service\AbstractController;
 class HomeController extends AbstractController
 {
 
-    /**
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     public function index()
     {
-        $this->display( "<title>试试</title><p>are you ready?</p>");
+        $this->display("<title>试试</title><p>are you ready?</p>");
     }
 }
 
