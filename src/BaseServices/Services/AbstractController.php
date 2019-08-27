@@ -36,14 +36,68 @@ abstract class AbstractController implements ControllerInterface
             $result = $this->getView("src/views/layout/" . $this->layout . ".layout.html");
             $result = str_replace("{__CONTENT__}", $data, $result);
             // header ( 'Content-Type:' . $contentType . '; charset=' . $charset );
-            echo $result;
+
+            echo $this->changeViewResult($result);
         }
     }
 
+    private function changeViewResult(string $result): string
+    {
+        /*
+         * 将在Controller中设置的各项内容移动到合适的位置
+         * 因为涉及到两处操作，目的地添加，源删除，无法通过返回一个操作值完成
+         * 引用源变量的地址来操作
+         */
+        $result = preg_replace("/[\t\n\r]+/", "", $result);
+
+        preg_replace_callback_array([
+            '/<(div)[^<>]*>[^\1]*(<([tT]itle)[^>]*>[^<>]*<\/\3>)[^\1]*<\/\1>/' => function ($match) use (&$result) {
+                $result = preg_match('/<(title)>[^<>]*<\/\1>/', $result) ? preg_replace('/<(title)>[^<]*<\/\1>/', $match[2], $result) : str_replace('</head>', $match[2] . '</head>', $result);
+                // 将Title设置到中head中，如果先有<head></head>标签，直接替换，否则凑加到head中
+                $result = str_replace($match[0], str_replace($match[2], "", $match[0]), $result);
+                return str_replace($match[2], "", $match[0]);
+            },
+            '/<(div).*?(?!>)[^\1]*(<(style)[^>]*>[^<>]*<\/\3>)[^\1]*<\/\1>/' => function ($match) use (&$result) {
+                $result = str_replace('</head>', $match[2] . '</head>', $result); // 将匹配结果移动到head中
+                $result = str_replace($match[0], str_replace($match[2], "", $match[0]), $result); // 删除原位置的匹配项
+                return str_replace($match[2], "", $match[0]); // 返回针对匹配的操作，后续的匹配操作才能继续
+            },
+            '/<(div)[^<>]*>[^\1]*(<(script)[^<>]*><\/\3>)[^\1]*<\/\1>/' => function ($match) use (&$result) {
+                $result = str_replace('</body>', $match[2] . '</body>', $result);
+                $result = str_replace($match[0], str_replace($match[2], "", $match[0]), $result);
+                return str_replace($match[2], "", $match[0]);
+            },
+            '/<(div)[^<>]*>[^\1]*(<link[^>]+>)[^\1]*<\/\1>/' => function ($match) use (&$result) {
+                $result = str_replace('</head>', $match[2] . '</head>', $result);
+                $result = str_replace($match[0], str_replace($match[2], "", $match[0]), $result);
+                return str_replace($match[2], "", $match[0]);
+            }
+        ], $result);
+        /*
+         * 针对可能出现的项目运行目录不是Server根目录情况设置引用文件的路径变化
+         */
+        if (preg_match('/\blocalhost\b\:\d{4,5}/', $_SERVER['HTTP_HOST']) && preg_match('/' . basename(getcwd()) . '/', $_SERVER['REQUEST_URI']))
+            $result = preg_replace_callback_array([
+                '/<(script)[^<>]*?(?<=src)="([^<>]+)"[^<>]*><\/\1>/' => function ($match) {
+                    return str_replace($match[2], basename(getcwd()) . '/' . $match[2], $match[0]);
+                },
+                '/<link\s*href="([^"]+)(?!>)/' => function ($match) {
+                    return str_replace($match[1], basename(getcwd()) . '/' . $match[1], $match[0]);
+                }
+            ], $result);
+
+        return $result;
+    }
+
+    /**
+     * 自行指定视图模版
+     *
+     * @param string $layout
+     */
     protected function setLayout(string $layout)
     {
-        if (file_exists(getcwd() . "/src/views/layout/" . $layout . ".layout.html"))
-            $this->layout = $layout;
+        // if (file_exists(getcwd() . "/src/views/layout/" . $layout . ".layout.html"))
+        $this->layout = $layout;
     }
 
     /**

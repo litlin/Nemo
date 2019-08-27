@@ -51,7 +51,7 @@ class BaseService implements ServicesInterface
      *
      * @see \BaseServices\Interfaces\ServicesInterface::run()
      */
-    public function run():void
+    public function run(): void
     {
         try {
             $result = $this->method->invokeArgs($this->method->getDeclaringClass()
@@ -69,10 +69,13 @@ class BaseService implements ServicesInterface
      *
      * @see \BaseServices\Interfaces\ServicesInterface::bootstrap()
      */
-    public static  function bootstrap():ServicesInterface
+    public static function bootstrap(): ServicesInterface
     {
         $uri = $_SERVER['REQUEST_URI'];
         if (preg_match('/^[A-Za-z0-9\/]+$/', $uri)) {
+            if (preg_match('/' . basename(getcwd()) . '/', $uri))
+                $uri = substr($uri, strlen(basename(getcwd())));
+
             $uria = explode("/", trim($uri, "\/"));
 
             if (preg_match('/^[A-Z][a-z]+$/', $uria[0])) {
