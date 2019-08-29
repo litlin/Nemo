@@ -11,6 +11,6 @@ interface ControllerInterface
 
     public function index();
 
-    public function display(string $data = ""):void;
+    public function display(string $data = ""): void;
 }
 

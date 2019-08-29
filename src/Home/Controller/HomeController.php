@@ -2,6 +2,7 @@
 namespace Home\Controller;
 
 use BaseServices\Services\AbstractController;
+use BaseServices\Struct\TableStruct;
 
 /**
  *
@@ -13,8 +14,24 @@ class HomeController extends AbstractController
 
     public function index()
     {
-        $this->display('<link href="css/icon.css" rel="stylesheet"><script type="text/javascript" src="js/bootstrap.min.js"></script><title>试试</title><p>are you ready?</p>
-<style type="text/css">.container {padding-top: 60px;padding-bottom: 40px;}</style>');
+        $this->addData("link", "css/icon.css")
+            ->addData("title", "欢迎!")
+            ->addData('p', 'are you ready?');
+        $this->addData("table", TableStruct::format(array(
+            "日期",
+            "时间"
+        ), [
+            array(
+                date('Y-m-d'),
+                date('H:i:s')
+            ),
+            array(
+                date('Y-m-d'),
+                date('H:i:s', time() - 10 * 60 * 60)
+            )
+        ]), 'class="table"');
+        $this->addData('div', '<span class="icon-off"></span>');
+        $this->display();
     }
 }
 

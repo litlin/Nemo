@@ -12,6 +12,8 @@ use BaseServices\Interfaces\ControllerInterface;
 abstract class AbstractController implements ControllerInterface
 {
 
+    protected $data = "";
+
     protected $layout = "default";
 
     /**
@@ -34,21 +36,68 @@ abstract class AbstractController implements ControllerInterface
             die();
         } else {
             $result = $this->getView("src/views/layout/" . $this->layout . ".layout.html");
-            $result = str_replace("{__CONTENT__}", $data, $result);
+            $result = str_replace("{__CONTENT__}", $this->data . $data, $result);
             // header ( 'Content-Type:' . $contentType . '; charset=' . $charset );
-
+            header('Content-Type:text/html; charset=UTF-8');
             echo $this->changeViewResult($result);
         }
     }
 
+    protected function addData($name, $value, $attributes = ""): AbstractController
+    {
+        $name = strtolower($name);
+        switch ($name) {
+            case "title":
+                $this->data .= "<title>$value</title>";
+                break;
+            case "link":
+                $this->data .= '<link href="' . $value . '" rel="stylesheet">';
+                break;
+            case "style":
+                $this->data .= '<style type="text/css">' . $value . '</style>';
+                break;
+            case "js.file":
+                $this->data .= '<script src="' . $value . '"' . $attributes . '></script> ';
+                break;
+            case "js.code":
+                $this->data .= '<script ' . $attributes . '>' . $value . '</script> ';
+                break;
+            case "p":
+                $this->data .= "<p $attributes>$value</p>";
+                break;
+            case "div":
+                $this->data .= "<div $attributes>$value</div>";
+                break;
+            case "table":
+                if ($value instanceof \ArrayIterator) {
+                    $this->data .= "<table $attributes>";
+                    while ($value->valid()) {
+                        foreach ($value->current() as $row) {
+                            $this->data .= "<tr>";
+                            foreach ($row as $cell) {
+                                $this->data .= "<" . $value->key() . ">" . $cell . "</" . $value->key() . ">";
+                            }
+                            $this->data .= "</tr>";
+                        }
+                        $value->next();
+                    }
+                    $this->data .= "</table>";
+                }
+                break;
+            default:
+        }
+        return $this;
+    }
+
+    /**
+     * 将单独设置的各项内容移动到合适的位置,美化外观
+     *
+     * @param string $result
+     * @return string
+     */
     private function changeViewResult(string $result): string
     {
-        /*
-         * 将在Controller中设置的各项内容移动到合适的位置
-         * 因为涉及到两处操作，目的地添加，源删除，无法通过返回一个操作值完成
-         * 引用源变量的地址来操作
-         */
-        $result = preg_replace("/[\t\n\r]+/", "", $result);
+        $result = preg_replace("/[\t\n\r]+/", "", $result); // 删除各类制表换行符等，不然正则很可能无法匹配
 
         preg_replace_callback_array([
             '/<(div)[^<>]*>[^\1]*(<([tT]itle)[^>]*>[^<>]*<\/\3>)[^\1]*<\/\1>/' => function ($match) use (&$result) {
@@ -57,24 +106,39 @@ abstract class AbstractController implements ControllerInterface
                 $result = str_replace($match[0], str_replace($match[2], "", $match[0]), $result);
                 return str_replace($match[2], "", $match[0]);
             },
+            '/<(div)[^<>]*>[^\1]*(<link[^>]+>)[^\1]*<\/\1>/' => function ($match) use (&$result) {
+                /*
+                 * 针对可能出现的多个操作对象的改进
+                 */
+                if (preg_match_all('/<link[^>]+>/', $match[0], $mi))
+                    foreach ($mi[0] as $each) {
+                        $result = str_replace('</head>', $each . '</head>', $result); // 在目标位置添加
+                        $result = str_replace($match[0], str_replace($each, "", $match[0]), $result); // 删除源位置内容
+                        $match[0] = str_replace($each, "", $match[0]); // 记录替换操作
+                    }
+                return $match[0];
+            },
             '/<(div).*?(?!>)[^\1]*(<(style)[^>]*>[^<>]*<\/\3>)[^\1]*<\/\1>/' => function ($match) use (&$result) {
-                $result = str_replace('</head>', $match[2] . '</head>', $result); // 将匹配结果移动到head中
-                $result = str_replace($match[0], str_replace($match[2], "", $match[0]), $result); // 删除原位置的匹配项
-                return str_replace($match[2], "", $match[0]); // 返回针对匹配的操作，后续的匹配操作才能继续
+                if (preg_match_all('/<(style)[^>]*>[^<>]*<\/\1>/', $match[0], $mi))
+                    foreach ($mi[0] as $each) {
+                        $result = str_replace('</head>', $each . '</head>', $result); // 在目标位置添加
+                        $result = str_replace($match[0], str_replace($each, "", $match[0]), $result); // 删除源位置内容
+                        $match[0] = str_replace($each, "", $match[0]); // 记录替换操作
+                    }
+                return $match[0]; // 返回针对匹配的操作，后续的匹配操作才能继续
             },
             '/<(div)[^<>]*>[^\1]*(<(script)[^<>]*><\/\3>)[^\1]*<\/\1>/' => function ($match) use (&$result) {
-                $result = str_replace('</body>', $match[2] . '</body>', $result);
-                $result = str_replace($match[0], str_replace($match[2], "", $match[0]), $result);
-                return str_replace($match[2], "", $match[0]);
-            },
-            '/<(div)[^<>]*>[^\1]*(<link[^>]+>)[^\1]*<\/\1>/' => function ($match) use (&$result) {
-                $result = str_replace('</head>', $match[2] . '</head>', $result);
-                $result = str_replace($match[0], str_replace($match[2], "", $match[0]), $result);
-                return str_replace($match[2], "", $match[0]);
+                if (preg_match_all('/<(script)[^<>]*><\/\1>/', $match[0], $mi))
+                    foreach ($mi[0] as $each) {
+                        $result = str_replace('</body>', $each . '</body>', $result);
+                        $result = str_replace($match[0], str_replace($each, "", $match[0]), $result);
+                        $match[0] = str_replace($each, "", $match[0]);
+                    }
+                return $match[0];
             }
         ], $result);
         /*
-         * 针对可能出现的项目运行目录不是Server根目录情况设置引用文件的路径变化
+         * 针对可能出现的项目目录不是Server根目录情况设置引用文件的路径变化
          */
         if (preg_match('/\blocalhost\b\:\d{4,5}/', $_SERVER['HTTP_HOST']) && preg_match('/' . basename(getcwd()) . '/', $_SERVER['REQUEST_URI']))
             $result = preg_replace_callback_array([
@@ -120,10 +184,8 @@ abstract class AbstractController implements ControllerInterface
             while (ob_get_level() > $level) {
                 ob_end_clean();
             }
-
             throw $e;
         }
-
         return ob_get_clean();
     }
 }
