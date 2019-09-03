@@ -38,7 +38,7 @@ abstract class AbstractController implements ControllerInterface
             $result = $this->getView("src/views/layout/" . $this->layout . ".layout.html");
             $result = str_replace("{__CONTENT__}", $this->data . $data, $result);
             // header ( 'Content-Type:' . $contentType . '; charset=' . $charset );
-            header('Content-Type:text/html; charset=UTF-8');
+            // header('Content-Type:text/html; charset=UTF-8');
             echo $this->changeViewResult($result);
         }
     }
@@ -75,16 +75,24 @@ abstract class AbstractController implements ControllerInterface
                         foreach ($value->current() as $row) {
                             $this->data .= "<tr>";
                             foreach ($row as $cell) {
-                                $this->data .= "<" . $value->key() . ">" . $cell . "</" . $value->key() . ">";
+                                if (is_array($cell)) {
+                                    $this->data .= "<" . $value->key() . (" " . $cell[1] ?? "") . ">" . ($cell[0] ?? $cell) . "</" . $value->key() . ">";
+                                } else {
+                                    $this->data .= "<" . $value->key() . ">" . $cell . "</" . $value->key() . ">";
+                                }
                             }
                             $this->data .= "</tr>";
                         }
                         $value->next();
                     }
                     $this->data .= "</table>";
+                } else {
+                    $this->data .= $value;
                 }
                 break;
             default:
+                $this->data .= $value; // 䚱
+                break;
         }
         return $this;
     }
@@ -140,7 +148,7 @@ abstract class AbstractController implements ControllerInterface
         /*
          * 针对可能出现的项目目录不是Server根目录情况设置引用文件的路径变化
          */
-        if (preg_match('/\blocalhost\b\:\d{4,5}/', $_SERVER['HTTP_HOST']) && preg_match('/' . basename(getcwd()) . '/', $_SERVER['REQUEST_URI']))
+        if (preg_match('/\blocalhost\b\:\d{4,5}/', $_SERVER['HTTP_HOST']) && preg_match('/^\/' . basename(getcwd()) . '$/', $_SERVER['REQUEST_URI']))
             $result = preg_replace_callback_array([
                 '/<(script)[^<>]*?(?<=src)="([^<>]+)"[^<>]*><\/\1>/' => function ($match) {
                     return str_replace($match[2], basename(getcwd()) . '/' . $match[2], $match[0]);
@@ -158,7 +166,7 @@ abstract class AbstractController implements ControllerInterface
      *
      * @param string $layout
      */
-    protected function setLayout(string $layout)
+    protected function setLayout(string $layout): void
     {
         // if (file_exists(getcwd() . "/src/views/layout/" . $layout . ".layout.html"))
         $this->layout = $layout;

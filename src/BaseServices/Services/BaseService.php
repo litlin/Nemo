@@ -20,8 +20,10 @@ class BaseService implements ServicesInterface
         $method = new \ReflectionMethod($moduleController, $action);
         if ($method->isPublic()) {
             $this->params = [];
-            if (! empty($args[0])) {
-                if (count($args) == $method->getNumberOfParameters()) {
+            if (! empty($args)) {
+                if ($action === 'index') {
+                    $this->params = $args;
+                } elseif (count($args) == $method->getNumberOfParameters()) {
                     $i = 0;
                     foreach ($method->getParameters() as $p) {
                         $this->params[$p->name] = $args[$i ++];
@@ -32,8 +34,6 @@ class BaseService implements ServicesInterface
                         if (! $p->isDefaultValueAvailable())
                             $this->params[$p->name] = $args[$i ++];
                     }
-                } elseif ($action === 'index') {
-                    $this->params = $args;
                 } else {
                     self::showError("too many params");
                 }
@@ -72,12 +72,11 @@ class BaseService implements ServicesInterface
     public static function bootstrap(): ServicesInterface
     {
         $uri = $_SERVER['REQUEST_URI'];
-        if (preg_match('/^[A-Za-z0-9\/]+$/', $uri)) {
+        $uri = count($_GET) ? substr($uri, 0, strpos($uri, "?")) : $uri;
+        if (preg_match('/^[A-Za-z0-9_\/]+$/', $uri)) {
             if (preg_match('/' . basename(getcwd()) . '/', $uri))
-                $uri = substr($uri, strlen(basename(getcwd())));
-
+                $uri = substr($uri, strlen(basename(getcwd())) + 1);
             $uria = explode("/", trim($uri, "\/"));
-
             if (preg_match('/^[A-Z][a-z]+$/', $uria[0])) {
                 $m = $uria[0];
                 array_shift($uria);
@@ -99,6 +98,10 @@ class BaseService implements ServicesInterface
                 } else {
                     self::showError("no method can be called.");
                 }
+                if (empty($uria[0])) {
+                    $uria = array();
+                }
+
                 return new BaseService($mc, $action, $uria);
             } else {
                 self::showError("$c controller in $m moudle not exists");

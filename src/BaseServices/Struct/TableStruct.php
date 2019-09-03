@@ -27,9 +27,16 @@ class TableStruct
             'td' => []
         ];
         $count = 0;
+        array_walk($th, function (&$each) {
+            if (! is_array($each)) {
+                $each = [
+                    $each
+                ];
+            }
+        });
         // 判断作为标题的行每列值是否为相应的基本类型字符或者数字
         if (array_walk($th, function ($row) use (&$count) {
-            if (is_string($row) || is_numeric($row)) {} else {
+            if (is_string($row[0]) || is_numeric($row[0])) {} else {
                 $count ++;
             }
         }) && $count === 0) {
@@ -58,27 +65,30 @@ class TableStruct
 }
 
 // try {
-//     $data = TableStruct::format([
-//         '日期',
-//         'B'
-//     ], [
-//         [
-//             2,
-//             3
-//         ],
-//         [
-//             '4',
-//             '5'
-//         ],
-//         [
-//             '6',
-//             '7'
-//         ]
+//     $data = TableStruct::format(array(
+//         ["日期",'id="date"'],
+//         [ "时间",'class="time"']
+//     ), [
+//         array(
+//             date('Y-m-d'),
+//             date('H:i:s')
+//         ),
+//         array(
+//             [date('Y-m-d'),'class="date"'],
+//             date('H:i:s', time() - 10 * 60 * 60)
+//         )
 //     ]);
+// //     ini_set("error_reporting", "E_ALL & ~E_NOTICE");
 //     while ($data->valid()) {
-//         echo $data->key();
 //         foreach ($data->current() as $row) {
-//             var_dump($row);
+//             foreach ($row as $cell) {
+//                 if (is_array($cell)) {
+//                     echo "<" . $data->key() . " " . ($cell[1] ?? "") . ">" . ($cell[0] ?? $cell) . "</" . $data->key() . ">\n";
+//                 }else {
+//                     echo "<" . $data->key() .  ">" . $cell . "</" . $data->key() . ">\n";
+//                 }
+               
+//             }
 //         }
 //         $data->next();
 //     }
