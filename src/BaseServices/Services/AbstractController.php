@@ -147,14 +147,28 @@ abstract class AbstractController implements ControllerInterface
         ], $result);
         /*
          * 针对可能出现的项目目录不是Server根目录情况设置引用文件的路径变化
+         * 简单粗暴的使用项目的绝对路径
          */
-        if (preg_match('/\blocalhost\b\:\d{4,5}/', $_SERVER['HTTP_HOST']) && preg_match('/^\/' . basename(getcwd()) . '$/', $_SERVER['REQUEST_URI']))
+        if (preg_match('/\blocalhost\b\:\d{4,5}/', $_SERVER['HTTP_HOST']))
+            // && preg_match('/^\/' . basename(getcwd()) . '$/', $_SERVER['REQUEST_URI'])
             $result = preg_replace_callback_array([
                 '/<(script)[^<>]*?(?<=src)="([^<>]+)"[^<>]*><\/\1>/' => function ($match) {
-                    return str_replace($match[2], basename(getcwd()) . '/' . $match[2], $match[0]);
+                    if (! preg_match('/^http.*/', $match[2])) {
+                        if (strpos($_SERVER['DOCUMENT_ROOT'], getcwd()) === FALSE) {
+                            return str_replace($match[2], "http://" . $_SERVER['HTTP_HOST'] .'/'. basename(getcwd()) . '/' . $match[2], $match[0]);
+                        } else {
+                            return str_replace($match[2], "http://" . $_SERVER['HTTP_HOST'] . '/' . $match[2], $match[0]);
+                        }
+                    }
                 },
                 '/<link\s*href="([^"]+)(?!>)/' => function ($match) {
-                    return str_replace($match[1], basename(getcwd()) . '/' . $match[1], $match[0]);
+                    if (! preg_match('/^http:.*/', $match[1])) {
+                        if (strpos($_SERVER['DOCUMENT_ROOT'], getcwd()) === FALSE) {
+                            return str_replace($match[1], "http://" . $_SERVER['HTTP_HOST'] .'/'. basename(getcwd()) . '/' . $match[1], $match[0]);
+                        } else {
+                            return str_replace($match[1], "http://" . $_SERVER['HTTP_HOST'] . '/' . $match[1], $match[0]);
+                        }
+                    }
                 }
             ], $result);
 

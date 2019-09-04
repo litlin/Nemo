@@ -15,6 +15,7 @@ class HomeController extends AbstractController
 
     public function index()
     {
+var_dump(func_get_args());
         $this->addData("link", "css/icon.css")
             ->addData("title", "欢迎!")
             ->addData('p', 'are you ready?');

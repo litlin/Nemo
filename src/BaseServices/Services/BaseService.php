@@ -73,8 +73,8 @@ class BaseService implements ServicesInterface
     {
         $uri = $_SERVER['REQUEST_URI'];
         $uri = count($_GET) ? substr($uri, 0, strpos($uri, "?")) : $uri;
-        if (preg_match('/^[A-Za-z0-9_\/]+$/', $uri)) {
-            if (preg_match('/' . basename(getcwd()) . '/', $uri))
+        if (preg_match('/^[A-Za-z0-9_\/-]+$/', $uri)) {
+            if (preg_match('/' . basename(getcwd()) . '/', $uri) && strpos($_SERVER['DOCUMENT_ROOT'], getcwd()) === FALSE)
                 $uri = substr($uri, strlen(basename(getcwd())) + 1);
             $uria = explode("/", trim($uri, "\/"));
             if (preg_match('/^[A-Z][a-z]+$/', $uria[0])) {
@@ -89,6 +89,7 @@ class BaseService implements ServicesInterface
             } else {
                 $m = $c = 'Home';
             }
+
             $mc = $m . "\\Controller\\" . $c . "Controller";
             if (class_exists($mc)) {
                 if (! empty($uria) && method_exists($mc, $action = $uria[0]) && preg_match('/^[a-z][a-zA-Z]*$/', $action)) {
