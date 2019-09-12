@@ -73,7 +73,13 @@ abstract class AbstractController implements ControllerInterface
                     $this->data .= "<table $attributes>";
                     while ($value->valid()) {
                         foreach ($value->current() as $row) {
-                            $this->data .= "<tr>";
+                            $key = array_key_first($row);
+                            if ($key !== 0) {
+                                $this->data .= "<tr $key>";
+                                $row = $row[$key];
+                            } else {
+                                $this->data .= "<tr>";
+                            }
                             foreach ($row as $cell) {
                                 if (is_array($cell)) {
                                     $this->data .= "<" . $value->key() . (" " . $cell[1] ?? "") . ">" . ($cell[0] ?? $cell) . "</" . $value->key() . ">";
